@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'knox',
     'apps.users',
-    'apps.csvdata'
+    'apps.csvdata',
+    'apps.visualizations'
 ]
 
 MIDDLEWARE = [
