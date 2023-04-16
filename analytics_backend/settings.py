@@ -28,6 +28,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 
 # Application definition
 
@@ -42,7 +43,8 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
     'knox',
-    'apps.users'
+    'apps.users',
+    'apps.csvdata'
 ]
 
 MIDDLEWARE = [
