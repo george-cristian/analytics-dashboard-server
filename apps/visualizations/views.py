@@ -9,15 +9,32 @@ from asgiref.sync import async_to_sync, sync_to_async
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.http import JsonResponse, HttpResponseServerError
-from rest_framework import status
+from django.shortcuts import get_object_or_404
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from django.contrib.auth.models import User
+from rest_framework.mixins import (ListModelMixin, RetrieveModelMixin,
+                                   UpdateModelMixin)
 
+from .serializers import VisualizationSerializer
 from .models import Visualization
 from apps.csvdata.models import CSVData
 
-class VisualizationView(APIView):
+class VisualizationViewSet(ListModelMixin,
+                  RetrieveModelMixin,
+                  UpdateModelMixin,
+                  viewsets.GenericViewSet):
+    
+    # allow only authenticated users to access the views
     permission_classes = (IsAuthenticated, )
+    serializer_class = VisualizationSerializer
+    lookup_field = 'id'
 
-    def get(self, request):
+    def get_queryset(self):
+        user = self.request.user
+        return Visualization.objects.filter(user=user)
+
+    def create(self, request):
         return async_to_sync(self.create_plots)(request)
     
     async def create_plots(self, request):
@@ -62,6 +79,39 @@ class VisualizationView(APIView):
         return JsonResponse({'message': 'Charts generated successfully.',
                              'paths': file_paths})
     
+    @action(detail=False, methods=['get', 'post'], url_path='share')
+    def share(self, request):
+        if request.method == 'POST':
+            return self.share_with_user(request)
+        else:
+            return self.get_shared_visualizations(request)
+            
+    def share_with_user(self, request):
+        response = None
+        try:
+            username = request.query_params.get('username', None)
+            shared_with = get_object_or_404(User, username=username)
+            visualizations = Visualization.objects.filter(user=request.user)
+            for visualization in visualizations:
+                visualization.shared_with.add(shared_with)
+            response = JsonResponse({'message': 'Charts have been shared successfully'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            response = JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        return response
+
+    def get_shared_visualizations(self, request):
+        response = None
+        try:
+            user = request.user
+            shared_visualizations = Visualization.objects.filter(shared_with=user)
+            serializer = VisualizationSerializer(shared_visualizations, many=True)
+            response = JsonResponse(serializer.data, safe=False)
+        except Exception as exc:
+            response = JsonResponse({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return response
+
     async def create_chart(self, user, team, team_df, chart_type):
         file_path = ""
         team = team.replace(" ", "_")
