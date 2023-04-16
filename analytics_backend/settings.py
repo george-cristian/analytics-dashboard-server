@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
     'knox',
-    'users'
+    'apps.users'
 ]
 
 MIDDLEWARE = [
