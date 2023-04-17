@@ -3,6 +3,8 @@ from django.urls import path, include
 from rest_framework import routers
 from apps.csvdata import views as csvdata_views
 from apps.visualizations import views as visualization_views
+from django.conf import settings
+from django.conf.urls.static import static
 
 # generate the routing for the csvdata endpoints
 router = routers.DefaultRouter()
@@ -13,4 +15,4 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/', include('apps.users.urls')),
     path('api/v1/', include(router.urls))
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

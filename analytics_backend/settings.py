@@ -32,6 +32,9 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 
 # Application definition
 
+MEDIA_ROOT = '/visualizations/'
+MEDIA_URL = '/visualizations/'
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

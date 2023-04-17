@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.http import JsonResponse, HttpResponseServerError
 from django.shortcuts import get_object_or_404
+from django.conf import settings
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from django.contrib.auth.models import User
@@ -18,7 +19,9 @@ from rest_framework.mixins import (ListModelMixin, RetrieveModelMixin,
 
 from .serializers import VisualizationSerializer
 from .models import Visualization
+from .utils import PlottingHandler, FILE_URL_PREFIX
 from apps.csvdata.models import CSVData
+
 
 class VisualizationViewSet(ListModelMixin,
                   RetrieveModelMixin,
@@ -113,104 +116,26 @@ class VisualizationViewSet(ListModelMixin,
         return response
 
     async def create_chart(self, user, team, team_df, chart_type):
-        file_path = ""
+        file_path = f'/visualizations/{user.id}/{chart_type}/{team}_{datetime.now().strftime("%Y%m%d%H%M%S")}.png'
+
+        file_url = FILE_URL_PREFIX + file_path
+        
         team = team.replace(" ", "_")
-        if chart_type == 'line':
-            file_path = await self.create_line_chart(user, team, team_df)
-        elif chart_type == 'bar':
-            file_path = await self.create_bar_chart(user, team, team_df)
-        elif chart_type == 'scatter':
-            file_path = await self.create_scatter_plot(user, team, team_df)
 
-        return file_path
+        await PlottingHandler.create_chart(chart_type, file_path, team, team_df)
 
-    async def create_line_chart(self, user, team, team_df):
-        plt.figure(figsize=(20, 10))
-        plt.plot(team_df.index, team_df['review_time'], label='Review Time')
-        plt.plot(team_df.index, team_df['merge_time'], label='Merge Time')
-        plt.xlabel('Date')
-        plt.ylabel('Duration (s)')
-        plt.title(f'{team} Review and Merge Times')
-        plt.legend()
-        plt.xticks(rotation=90)
-        file_path = f'/visualizations/{user.id}/line/{team}_{datetime.now().strftime("%Y%m%d%H%M%S")}.png'
-        await self.save_plot(file_path)
-
-        Visualization.objects.create(
-            user=user,
-            visualization_type='line',
-            file_path=file_path,
-            teams=[team],
-        )
+        await self.create_visualization_in_db(user, chart_type, file_path, team)
 
         return {'team': team,
-                'file_path': file_path,
+                'file_url': file_url,
                 'chart_type': 'line'}
     
-    async def create_bar_chart(self, user, team, team_df):
-        plt.figure(figsize=(20, 10))
-        width = 0.35
-        fig, ax = plt.subplots(figsize=(20, 10))
-        
-        # create a list of x positions for the bars
-        x = np.arange(len(team_df))
-        
-        # plot review time and merge time as stacked bars
-        rects1 = ax.bar(x, team_df['review_time'], width, label='Review Time')
-        rects2 = ax.bar(x, team_df['merge_time'], width, bottom=team_df['review_time'], label='Merge Time')
-        
-        # set x-ticks to be the dates in the DataFrame
-        ax.set_xticks(x)
-        ax.set_xticklabels(team_df.index.strftime('%Y-%m-%d'), rotation=90)
-        
-        ax.set_xlabel('Date')
-        ax.set_ylabel('Duration (s)')
-        ax.set_title(f'{team} Review and Merge Times')
-        ax.legend()
-        
-        file_path = f'/visualizations/{user.id}/bar/{team}_{datetime.now().strftime("%Y%m%d%H%M%S")}.png'
-        await self.save_plot(file_path)
-
+    @sync_to_async
+    def create_visualization_in_db(self, user, chart_type, file_path, team):
         Visualization.objects.create(
             user=user,
-            visualization_type='bar',
+            visualization_type=chart_type,
             file_path=file_path,
             teams=[team],
         )
 
-        return {'team': team,
-                'file_path': file_path,
-                'chart_type': 'bar'}
-
-    async def create_scatter_plot(self, user, team, team_df):
-        plt.figure(figsize=(20, 10))
-        plt.scatter(team_df.index, team_df['review_time'], label='Review Time')
-        plt.scatter(team_df.index, team_df['merge_time'], label='Merge Time')
-        plt.xlabel('Date')
-        plt.ylabel('Duration (s)')
-        plt.title(f'{team} Review and Merge Times')
-        plt.legend()
-        plt.xticks(rotation=90)
-        file_path = f'/visualizations/{user.id}/scatter/{team}_{datetime.now().strftime("%Y%m%d%H%M%S")}.png'
-        await self.save_plot(file_path)
-
-        Visualization.objects.create(
-            user=user,
-            visualization_type='scatter',
-            file_path=file_path,
-            teams=[team],
-        )
-
-        return {'team': team,
-                'file_path': file_path,
-                'chart_type': 'scatter'}
-
-    async def save_plot(self, file_path):
-        # Create the directory if it doesn't exist
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-
-        # Save the plot to the file path
-        plt.savefig(file_path)
-
-        # Clear the plot to free up memory
-        plt.clf()
