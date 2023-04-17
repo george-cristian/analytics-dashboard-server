@@ -24,13 +24,22 @@ class VisualizationViewSet(ListModelMixin, RetrieveModelMixin, UpdateModelMixin,
     lookup_field: str = 'id'
 
     def get_queryset(self) -> QuerySet[Visualization]:
+        """
+        Get the visualization for logged in user
+        """
         user = self.request.user
         return Visualization.objects.filter(user=user)
 
     def create(self, request: HttpRequest) -> JsonResponse:
+        """
+        Create visualizations for the csv data uploaded by the current user
+        """
         return async_to_sync(self.create_plots)(request)
     
     async def create_plots(self, request: HttpRequest) -> JsonResponse:
+        """
+        Create the plots for the data, store them on disk and in the database.
+        """
         user = request.user
 
         team = request.query_params.get('team')
@@ -74,12 +83,18 @@ class VisualizationViewSet(ListModelMixin, RetrieveModelMixin, UpdateModelMixin,
     
     @action(detail=False, methods=['get', 'post'], url_path='share')
     def share(self, request: HttpRequest) -> JsonResponse:
+        """
+        Share visualizations with other user or get the visualizations created by the current user
+        """
         if request.method == 'POST':
             return self.share_with_user(request)
         else:
             return self.get_shared_visualizations(request)
             
     def share_with_user(self, request: HttpRequest) -> JsonResponse:
+        """
+        Share visualizations with another user
+        """
         response = None
         try:
             username = request.query_params.get('username', None)
@@ -97,6 +112,9 @@ class VisualizationViewSet(ListModelMixin, RetrieveModelMixin, UpdateModelMixin,
         return response
 
     def get_shared_visualizations(self, request: HttpRequest) -> JsonResponse:
+        """
+        Retrieve the visualizations created by the current user
+        """
         response = None
         try:
             user = request.user
@@ -111,6 +129,9 @@ class VisualizationViewSet(ListModelMixin, RetrieveModelMixin, UpdateModelMixin,
         return response
 
     async def create_chart(self, user: User, team: str, team_df: pd.DataFrame, chart_type: str) -> dict:
+        """
+        Create a png chart and store it in the database
+        """
         file_path = f'/visualizations/{user.id}/{chart_type}/{team}_{datetime.now().strftime("%Y%m%d%H%M%S")}.png'
 
         file_url = FILE_URL_PREFIX + file_path
@@ -127,6 +148,9 @@ class VisualizationViewSet(ListModelMixin, RetrieveModelMixin, UpdateModelMixin,
     
     @sync_to_async
     def create_visualization_in_db(self, user: User, chart_type: str, file_path: str, team: str) -> None:
+        """
+        Create a visualization in the database
+        """
         Visualization.objects.create(
             user=user,
             visualization_type=chart_type,

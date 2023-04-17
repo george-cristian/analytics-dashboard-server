@@ -30,13 +30,22 @@ class CsvDataViewSet(ListModelMixin,
     lookup_field = 'id'
 
     def get_queryset(self) -> QuerySet[CSVData]:
+        """
+        Get the csv data created by the current user
+        """
         user = self.request.user
         return CSVData.objects.filter(user=user) 
 
     def create(self, request: HttpRequest) -> JsonResponse:
+        """
+        Upload csv data
+        """
         return async_to_sync(self.create_data)(request)
 
     async def create_data(self, request: HttpRequest) -> JsonResponse:
+        """
+        Upload csv data in the database
+        """
         response = None
 
         user = request.user
@@ -66,6 +75,9 @@ class CsvDataViewSet(ListModelMixin,
         return response
 
     async def save_csv_data_to_db(self, user: object, csv_dicts: list[dict[str, Any]]) -> None:
+        """
+        Async function to save the csv data in the database
+        """
         loop = asyncio.get_event_loop()
         tasks = []
         for csv_dict in csv_dicts:
@@ -77,9 +89,15 @@ class CsvDataViewSet(ListModelMixin,
 
     @action(detail=False, methods=['get'], url_path='statistics')
     def statistics(self, request: HttpRequest) -> JsonResponse:
+        """
+        API function for retrieving statistics for csv data
+        """
         return async_to_sync(self.get_statistics)(request)
     
     async def get_statistics(self, request) -> JsonResponse:
+        """
+        Retrieve the statistics for the csv data
+        """
         user = request.user
         team = request.query_params.get('team')
         
@@ -100,6 +118,9 @@ class CsvDataViewSet(ListModelMixin,
         return JsonResponse(team_stats, status=status.HTTP_200_OK)
 
     def calculate_team_stats(self, df: pd.DataFrame) -> dict[str, dict[str, dict[str, Union[float, int]]]]:
+        """
+        Calculate statistics for each team in the data
+        """
         team_stats = {}
 
         for team, team_df in df.groupby('team'):
@@ -111,6 +132,9 @@ class CsvDataViewSet(ListModelMixin,
         return team_stats
 
     def calculate_single_statistics(self, team_df: pd.DataFrame, col_type: str) -> dict[str, Union[float, int]]:
+        """
+        Calculate statistics for one part of the data
+        """
         time_mean = np.mean(team_df[col_type])
         time_median = np.median(team_df[col_type])
         time_mode = int(team_df[col_type].mode().iloc[0])

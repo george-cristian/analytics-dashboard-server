@@ -6,9 +6,15 @@ import pandas as pd
 FILE_URL_PREFIX = "http://127.0.0.1:8000"
 
 class PlottingHandler:
+    """
+    Handler class which contains static methods to create and save plots
+    """
     
     @staticmethod
     async def create_chart(chart_type: str, file_path: str, team: str, team_df: pd.DataFrame) -> None:
+        """
+        Create chart based on the chart type provided
+        """
         if chart_type == 'line':
             await PlottingHandler.create_line_chart(file_path, team, team_df)
         elif chart_type == 'bar':
@@ -18,6 +24,9 @@ class PlottingHandler:
 
     @staticmethod
     async def create_line_chart(file_path: str, team: str, team_df: pd.DataFrame) -> None:
+        """
+        Create line chart for the data provided and store it on disk
+        """
         plt.figure(figsize=(20, 10))
 
         plt.plot(team_df.index, team_df['review_time'], label='Review Time')
@@ -33,6 +42,9 @@ class PlottingHandler:
     
     @staticmethod
     async def create_bar_chart(file_path: str, team: str, team_df: pd.DataFrame) -> None:
+        """
+        Create bar chart for the data provided and store it on disk
+        """
         plt.figure(figsize=(20, 10))
 
         width = 0.35
@@ -58,6 +70,9 @@ class PlottingHandler:
 
     @staticmethod
     async def create_scatter_plot(file_path: str, team: str, team_df: pd.DataFrame) -> None:
+        """
+        Create scatter plot for the data provided and store it on disk
+        """
         plt.figure(figsize=(20, 10))
 
         plt.scatter(team_df.index, team_df['review_time'], label='Review Time')
@@ -73,6 +88,9 @@ class PlottingHandler:
 
     @staticmethod
     async def save_plot(file_path: str) -> None:
+        """
+        Save plot on disk
+        """
         # create the directory if it doesn't exist
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
