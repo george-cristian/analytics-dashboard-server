@@ -1,0 +1,123 @@
+openapi: 3.0.0
+info:
+  title: Reviewing Analytics Dashboard API
+  version: 1.0.0
+  description: An API for getting analytics for review time and merge time for engineering teams
+servers:
+  - url: https://localhost:8000/api/v1
+paths:
+  /login:
+    post:
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+        '401':
+          description: Invalid username or password
+  /register:
+    post:
+      summary: User registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '201':
+          description: Registration successful
+        '400':
+          description: Invalid request body
+  /logout:
+    post:
+      summary: User logout
+      responses:
+        '200':
+          description: Logout successful
+  /logoutall:
+    post:
+      summary: User logout all users
+      responses:
+        '200':
+          description: Logout successful for all users
+  /csvdata/:
+    post:
+      summary: Upload CSV data
+      requestBody:
+        required: true
+        content:
+          text/csv:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: CSV data uploaded successfully
+        '400':
+          description: Invalid CSV data
+    get:
+      summary: Retrieve csv data uploaded by user
+      responses:
+        '200':
+          description: Csv data retrieved successfully
+  /statistics/:
+    get:
+      summary: Retrieve statistics
+      parameters:
+        - in: query
+          name: team
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+        '400':
+          description: Could not calculate statistics
+  /visualizations/:
+    post:
+      summary: Create a visualization
+      responses:
+        '201':
+          description: Visualization created successfully
+    get:
+      summary: Retrieve visualizations
+      responses:
+        '200':
+          description: Visualizations retrieved successfully
+  /visualizations/share/:
+    post:
+      summary: Share visualizations with user
+      parameters:
+        - in: query
+          name: username
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Visualization shared successfully
+        '400':
+          description: Could not create the charts
+    get:
+      summary: Retrieve visualizations which are shared with current user
+      responses:
+        '200':
+          description: Shared visualizations retrieved successfully
+        '400':
+          description: Could not retrieve the charts
+
+
