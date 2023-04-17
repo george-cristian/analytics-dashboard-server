@@ -44,3 +44,10 @@ To test the application using Postman, follow these steps:
 * numpy
 * Docker
 * OpenAPI
+
+## Code info:
+The Django application is structured into 3 apps, as they are called in the Django terminology. These apps can be found in the apps folder:
+* users - this contains all the code for the user registration and login
+* csvdata - this contains all the code for uploading csv data, and for generating statistics for the data (it has the models and the views). It's basically the implementation for /csvdata and /csvdata/statistics endpoints
+* visualizations - this contains the code for creating and sharing charts for the data
+The analytics_backend folder is the main django application which contains the app settings and urls.
