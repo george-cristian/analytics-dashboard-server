@@ -1,7 +1,8 @@
 import asyncio
 import traceback
 from io import StringIO
-from typing import Any, Dict, Any, Union
+from typing import Any, Any, Union
+import csv
 
 import numpy as np
 import pandas as pd
@@ -42,10 +43,19 @@ class CsvDataViewSet(ListModelMixin,
         
         try:
             data = request.body.decode('utf-8')
-
+            csv.reader(StringIO(data))
             df = await asyncio.to_thread(pd.read_csv, StringIO(data))
 
             csv_dicts = df.to_dict('records')
+
+            if len(csv_dicts) > 0:
+                for csv_dict in csv_dicts:
+                    keys = csv_dict.keys()
+                    for key in keys:
+                        if key not in ['review_time', 'team', 'date', 'merge_time']:
+                            raise Exception("The CSV data does not have correct format")
+            else:
+                raise Exception("The CSV data does not have correct format")
 
             await self.save_csv_data_to_db(user, csv_dicts)
 
