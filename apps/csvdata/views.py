@@ -1,17 +1,18 @@
 import asyncio
 import traceback
 from io import StringIO
-from typing import Any, NoReturn, Dict, Any, Union, List
+from typing import Any, Dict, Any, Union
 
 import numpy as np
 import pandas as pd
 from asgiref.sync import async_to_sync, sync_to_async
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpRequest
 from rest_framework import status, viewsets
 from rest_framework.mixins import (ListModelMixin, RetrieveModelMixin,
                                    UpdateModelMixin)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
+from django.db.models import QuerySet
 
 from .models import CSVData
 from .serializers import CSVDataSerializer
@@ -27,14 +28,14 @@ class CsvDataViewSet(ListModelMixin,
     serializer_class = CSVDataSerializer
     lookup_field = 'id'
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[CSVData]:
         user = self.request.user
         return CSVData.objects.filter(user=user) 
 
-    def create(self, request) -> JsonResponse:
+    def create(self, request: HttpRequest) -> JsonResponse:
         return async_to_sync(self.create_data)(request)
 
-    async def create_data(self, request):
+    async def create_data(self, request: HttpRequest) -> JsonResponse:
         response = None
 
         user = request.user
@@ -54,7 +55,7 @@ class CsvDataViewSet(ListModelMixin,
 
         return response
 
-    async def save_csv_data_to_db(self, user: object, csv_dicts: list[dict[str, Any]]) -> NoReturn:
+    async def save_csv_data_to_db(self, user: object, csv_dicts: list[dict[str, Any]]) -> None:
         loop = asyncio.get_event_loop()
         tasks = []
         for csv_dict in csv_dicts:
@@ -65,7 +66,7 @@ class CsvDataViewSet(ListModelMixin,
         await asyncio.gather(*tasks)
 
     @action(detail=False, methods=['get'], url_path='statistics')
-    def statistics(self, request) -> JsonResponse:
+    def statistics(self, request: HttpRequest) -> JsonResponse:
         return async_to_sync(self.get_statistics)(request)
     
     async def get_statistics(self, request) -> JsonResponse:
@@ -88,7 +89,7 @@ class CsvDataViewSet(ListModelMixin,
 
         return JsonResponse(team_stats, status=status.HTTP_200_OK)
 
-    def calculate_team_stats(self, df: pd.DataFrame) -> Dict[str, Dict[str, Dict[str, Union[float, int]]]]:
+    def calculate_team_stats(self, df: pd.DataFrame) -> dict[str, dict[str, dict[str, Union[float, int]]]]:
         team_stats = {}
 
         for team, team_df in df.groupby('team'):
@@ -99,7 +100,7 @@ class CsvDataViewSet(ListModelMixin,
 
         return team_stats
 
-    def calculate_single_statistics(self, team_df: pd.DataFrame, col_type: str) -> Dict[str, Union[float, int]]:
+    def calculate_single_statistics(self, team_df: pd.DataFrame, col_type: str) -> dict[str, Union[float, int]]:
         time_mean = np.mean(team_df[col_type])
         time_median = np.median(team_df[col_type])
         time_mode = int(team_df[col_type].mode().iloc[0])

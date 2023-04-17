@@ -6,7 +6,6 @@ from apps.visualizations import views as visualization_views
 from django.conf import settings
 from django.conf.urls.static import static
 
-# generate the routing for the csvdata endpoints
 router = routers.DefaultRouter()
 router.register(r'csvdata', csvdata_views.CsvDataViewSet, basename='csvdata')
 router.register(r'visualizations', visualization_views.VisualizationViewSet, basename='visualizations')

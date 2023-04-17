@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from knox.models import AuthToken
 from knox.views import LoginView as KnoxLoginView
+from django.http import HttpRequest
 
 from .serializers import RegisterSerializer, UserSerializer
 
@@ -14,7 +15,7 @@ class RegisterAPI(generics.GenericAPIView):
     """
     serializer_class = RegisterSerializer
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: HttpRequest, *args, **kwargs) -> Response:
         """
         Post function to register a new user.
         """
@@ -36,7 +37,7 @@ class LoginAPI(KnoxLoginView):
     """
     permission_classes = (permissions.AllowAny,)
 
-    def post(self, request, format=None):
+    def post(self, request: HttpRequest, format: str = None) -> Response:
         """
         Post function to login a user.
         """
